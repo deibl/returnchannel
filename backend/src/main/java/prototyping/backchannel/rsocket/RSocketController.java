@@ -7,10 +7,12 @@ import io.rsocket.util.ByteBufPayload;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.annotation.ConnectMapping;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Controller
@@ -41,7 +43,7 @@ public class RSocketController {
       rSocketDo.setName("rsocket do");
       try {
         final Payload payload = ByteBufPayload.create(objectMapper.writeValueAsBytes(rSocketDo));
-        consumer.route("fancy-route")
+        consumer.route("s-2-client")
             .data(payload)
             .send()
             .block();
@@ -49,5 +51,11 @@ public class RSocketController {
         throw new RuntimeException(e);
       }
     });
+  }
+
+  @MessageMapping("client-2-s")
+  Mono<Void> myMessage(RSocketIncreaseDo rSocketIncreaseDo) {
+    counterRSocket += rSocketIncreaseDo.getIncreaseValue();
+    return Mono.empty();
   }
 }

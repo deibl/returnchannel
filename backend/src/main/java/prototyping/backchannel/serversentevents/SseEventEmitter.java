@@ -5,6 +5,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
@@ -42,5 +44,10 @@ public class SseEventEmitter {
     emitter.onCompletion(() -> this.emitters.remove(emitter));
     emitter.onTimeout(() -> this.emitters.remove(emitter));
     return emitter;
+  }
+
+  @PostMapping("/sse")
+  public void increaseCurrentState(@RequestBody SseIncreaseDo sseIncreaseDo) {
+    counterSse += sseIncreaseDo.getIncreaseValue();
   }
 }

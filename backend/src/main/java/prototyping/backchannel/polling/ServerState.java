@@ -16,4 +16,8 @@ public class ServerState {
   public void increaseCounter() {
     counterPolling++;
   }
+
+  public void increaseCounterBy(int value) {
+    counterPolling += value;
+  }
 }

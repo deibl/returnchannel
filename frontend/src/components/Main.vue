@@ -5,22 +5,33 @@
         Polling
       </div>
       <div>
+        <button @click="pollingIncrease">+100</button>
+      </div>
+      <div>
         Server counter latest:
         {{counterPolling}}
       </div>
     </div>
+    <br>
     <div>
       <div>
         Sse
+      </div>
+      <div>
+        <button @click="sseIncrease">+100</button>
       </div>
       <div>
         Server counter latest:
         {{counterSse}}
       </div>
     </div>
+    <br>
     <div>
       <div>
         RSocket
+      </div>
+      <div>
+        <button @click="rSocketIncrease">+100</button>
       </div>
       <div>
         Server counter latest:
@@ -40,6 +51,7 @@ import {
   RSocketClient
 } from "rsocket-core";
 import RSocketWebSocketClient from "rsocket-websocket-client";
+import {APPLICATION_JSON, MESSAGE_RSOCKET_ROUTING} from "rsocket-core/build";
 
 function performPolling() {
   setInterval(() => {
@@ -65,7 +77,10 @@ class RSocketResponder {
     this.callback(payload.data.dataUtf8);
   }
 }
-function startListeningToRSocket() {
+
+let rSocket;
+
+async function startListeningToRSocket() {
   const rSocketFireAndForgetHandler = data => {
     this.counterRSocket = data;
   };
@@ -77,19 +92,13 @@ function startListeningToRSocket() {
     setup: {
       keepAlive: 60000,
       lifetime: 180000,
-      dataMimeType: "application/json",
-      metadataMimeType: "message/x.rsocket.routing.v0"
+      dataMimeType: APPLICATION_JSON.string,
+      metadataMimeType: MESSAGE_RSOCKET_ROUTING.string
     },
     responder: new RSocketResponder(rSocketFireAndForgetHandler),
     transport: new RSocketWebSocketClient({url: "ws://localhost:7000/rsocket"})
   });
-
-  client.connect().subscribe({
-    onComplete: () => {
-      console.log('RSocket connected');
-    },
-    onError: error => console.log(`RSocket error: ${error.message}`),
-  });
+  rSocket = await client.connect();
 }
 
 export default {
@@ -101,10 +110,28 @@ export default {
     }
   },
 
-  mounted () {
+  mounted() {
     performPolling.call(this);
     startListeningToSse.call(this);
     startListeningToRSocket.call(this);
+  },
+
+  methods: {
+    pollingIncrease() {
+      axios
+      .post('http://localhost:8080/state', {increaseValue: 100})
+    },
+    sseIncrease() {
+      axios
+      .post('http://localhost:8080/sse', {increaseValue: 100})
+    },
+    rSocketIncrease() {
+      rSocket
+      .fireAndForget({
+        data: {increaseValue: 100},
+        metadata: String.fromCharCode(10) + 'client-2-s', //todo find out why this needs to have 10 chars
+      })
+    }
   }
 }
 </script>
